@@ -203,3 +203,10 @@ autorun(() => {
     render(t_msg(b.completed), document.querySelector('#winmsg'));
     render(t_labels(labels), document.querySelector('#newlabel'));
 });
+
+/*
+Purple: 97 39 81
+Green: 121 154 5
+Red: 186 36 84
+Yellow: 243 206 0
+*/
