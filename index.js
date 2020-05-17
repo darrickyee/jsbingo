@@ -1164,106 +1164,6 @@
      */
     const html = (strings, ...values) => new TemplateResult(strings, values, 'html', defaultTemplateProcessor);
 
-    /**
-     * @license
-     * Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    // IE11 doesn't support classList on SVG elements, so we emulate it with a Set
-    class ClassList {
-        constructor(element) {
-            this.classes = new Set();
-            this.changed = false;
-            this.element = element;
-            const classList = (element.getAttribute('class') || '').split(/\s+/);
-            for (const cls of classList) {
-                this.classes.add(cls);
-            }
-        }
-        add(cls) {
-            this.classes.add(cls);
-            this.changed = true;
-        }
-        remove(cls) {
-            this.classes.delete(cls);
-            this.changed = true;
-        }
-        commit() {
-            if (this.changed) {
-                let classString = '';
-                this.classes.forEach((cls) => classString += cls + ' ');
-                this.element.setAttribute('class', classString);
-            }
-        }
-    }
-    /**
-     * Stores the ClassInfo object applied to a given AttributePart.
-     * Used to unset existing values when a new ClassInfo object is applied.
-     */
-    const previousClassesCache = new WeakMap();
-    /**
-     * A directive that applies CSS classes. This must be used in the `class`
-     * attribute and must be the only part used in the attribute. It takes each
-     * property in the `classInfo` argument and adds the property name to the
-     * element's `class` if the property value is truthy; if the property value is
-     * falsey, the property name is removed from the element's `class`. For example
-     * `{foo: bar}` applies the class `foo` if the value of `bar` is truthy.
-     * @param classInfo {ClassInfo}
-     */
-    const classMap = directive((classInfo) => (part) => {
-        if (!(part instanceof AttributePart) || (part instanceof PropertyPart) ||
-            part.committer.name !== 'class' || part.committer.parts.length > 1) {
-            throw new Error('The `classMap` directive must be used in the `class` attribute ' +
-                'and must be the only part in the attribute.');
-        }
-        const { committer } = part;
-        const { element } = committer;
-        let previousClasses = previousClassesCache.get(part);
-        if (previousClasses === undefined) {
-            // Write static classes once
-            // Use setAttribute() because className isn't a string on SVG elements
-            element.setAttribute('class', committer.strings.join(' '));
-            previousClassesCache.set(part, previousClasses = new Set());
-        }
-        const classList = (element.classList || new ClassList(element));
-        // Remove old classes that no longer apply
-        // We use forEach() instead of for-of so that re don't require down-level
-        // iteration.
-        previousClasses.forEach((name) => {
-            if (!(name in classInfo)) {
-                classList.remove(name);
-                previousClasses.delete(name);
-            }
-        });
-        // Add or remove classes based on their classMap value
-        for (const name in classInfo) {
-            const value = classInfo[name];
-            if (value != previousClasses.has(name)) {
-                // We explicitly want a loose truthy check of `value` because it seems
-                // more convenient that '' and 0 are skipped.
-                if (value) {
-                    classList.add(name);
-                    previousClasses.add(name);
-                }
-                else {
-                    classList.remove(name);
-                    previousClasses.delete(name);
-                }
-            }
-        }
-        if (typeof classList.commit === 'function') {
-            classList.commit();
-        }
-    });
-
     /** MobX - (c) Michel Weststrate 2015 - 2020 - MIT Licensed */
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -5531,6 +5431,38 @@
         // check all arguments
         assertIsStateTreeNode(target, 1);
         return getStateTreeNode(target).identifier;
+    }
+    /**
+     * Casts a node snapshot or instance type to an instance type so it can be assigned to a type instance.
+     * Note that this is just a cast for the type system, this is, it won't actually convert a snapshot to an instance,
+     * but just fool typescript into thinking so.
+     * Either way, casting when outside an assignation operation won't compile.
+     *
+     * Example:
+     * ```ts
+     * const ModelA = types.model({
+     *   n: types.number
+     * }).actions(self => ({
+     *   setN(aNumber: number) {
+     *     self.n = aNumber
+     *   }
+     * }))
+     *
+     * const ModelB = types.model({
+     *   innerModel: ModelA
+     * }).actions(self => ({
+     *   someAction() {
+     *     // this will allow the compiler to assign a snapshot to the property
+     *     self.innerModel = cast({ a: 5 })
+     *   }
+     * }))
+     * ```
+     *
+     * @param snapshotOrInstance Snapshot or instance
+     * @returns The same object casted as an instance
+     */
+    function cast(snapshotOrInstance) {
+        return snapshotOrInstance;
     }
 
     /**
@@ -10232,109 +10164,207 @@
         snapshotProcessor: snapshotProcessor
     };
 
+    /* ---- Utilities ---- */
     const seq = (i) => [...Array(Math.round(i)).keys()];
-    const shuffle = arr => {
+    const randInt = (upper) => Math.floor(Math.random() * upper);
+    const shuffleArray = arr => {
         const a = [...arr];
         for (let i = a.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = randInt(i + 1);
             [a[i], a[j]] = [a[j], a[i]];
-            return a;
         }
+        return a;
     };
-    const Labels = types
+    /* ---- Label List ---- */
+    const LabelList = types
         .model('Labels', {
         list: types.array(types.string),
-        items: types.array(types.string),
-        center: 'FREE',
+        freeIndex: types.maybeNull(types.number),
     })
         .actions(self => ({
-        shuffle(size = self.list.length) {
-            self.items.clear();
-            if (self.list.length) {
-                const decks = Math.ceil(size / self.list.length);
-                const labels = seq(decks)
-                    .map(() => shuffle(self.list))
-                    .flat();
-                self.items.push(...labels.slice(0, size));
-            }
-        },
         add(text = '') {
             self.list.push(text);
         },
-        delete(text = '') {
-            if (text)
-                self.list.remove(text);
+        delete(idx = null) {
+            // Use 'cast' to avoid TypeScript errors
+            if (idx)
+                self.list = cast(self.list.filter((_, i) => i !== idx));
             else
                 self.list.pop();
         },
+        setFreeIndex(idx = null) {
+            self.freeIndex = idx;
+        },
+    }))
+        .views(self => ({
+        get freeLabel() {
+            return self.list[self.freeIndex];
+        },
     }));
+    /* ---- Square ---- */
     const Square = types
         .model('Square', {
         checked: false,
         free: false,
         label: 'Default label',
-        column: 0,
+        col: 0,
         row: 0,
     })
         .actions(self => ({
         check() {
             self.checked = !self.checked;
         },
-        setCenter(label = 'FREE') {
-            self.checked = true;
-            self.free = true;
-        },
     }));
+    /* ---- Board ---- */
     const Board = types
         .model('Board', {
         squares: types.array(Square),
-        labels: types.optional(Labels, { list: ['Label 1', 'Label 2', 'Label 3'] }),
         size: 5,
-        active: false,
     })
-        .actions(self => ({
-        generate(size = self.size) {
-            if (self.labels.list.length) {
-                self.labels.shuffle(self.size ** 2);
-                const squares = seq(size)
-                    .map(i => seq(size).map(j => Square.create({
-                    row: i,
-                    column: j,
-                    label: `${self.labels.items[i * size + j]}`,
-                })))
-                    .flat();
-                const ctr = Math.floor(size / 2);
-                squares.find(s => s.row === ctr && s.column === ctr).setCenter();
-                self.squares.clear();
-                self.squares.push(...squares);
-                self.active = true;
-            }
-        },
-    }))
-        .views(self => ({
-        getDim(dim = 'row') {
+        .views(self => {
+        function getDim(dim = 'row') {
             if (['row', 'column'].includes(dim))
                 return seq(self.size).map(i => self.squares.filter(sq => sq[dim] == i));
             return [];
-        },
-        get rows() {
-            return this.getDim();
-        },
-        get columns() {
-            return this.getDim('column');
-        },
-        get diagonals() {
-            return seq(2).map(i => self.squares.filter(s => i ? s.row === self.size - s.column - 1 : s.row === s.column));
-        },
-        get completed() {
-            const { rows, columns, diagonals } = this;
-            return (self.squares.length &&
-                [...rows, ...columns, ...diagonals].some(s => s.every(square => square.checked)));
-        },
-    }));
-    const labels = Labels.create({ list: [] });
-    const b = Board.create({ labels });
-    Object.assign(window, { board: b, labels });
+        }
+        return {
+            get rows() {
+                return getDim();
+            },
+            get columns() {
+                return getDim('column');
+            },
+            get diagonals() {
+                return seq(2).map(i => self.squares.filter(s => i ? s.row === self.size - s.col - 1 : s.row === s.col));
+            },
+            get completed() {
+                const { rows, columns, diagonals, } = this;
+                return (self.squares.length &&
+                    [...rows, ...columns, ...diagonals].some(s => s.every(square => square.checked)));
+            },
+        };
+    });
+    /* ---- Build board ---- */
+    const buildBoard = (labels, size = 5, randomFree = false) => {
+        if (size && labels.list.length) {
+            const numdecks = Math.ceil(size ** 2 / labels.list.length);
+            const boardlabels = seq(numdecks)
+                .flatMap(() => shuffleArray(labels.list))
+                .slice(0, size ** 2);
+            const freeIndex = randomFree ? randInt(size ** 2) : Math.floor(size ** 2 / 2);
+            return Board.create({
+                squares: boardlabels.map((label, i) => Square.create({
+                    row: Math.floor(i / size),
+                    col: i % size,
+                    label: i === freeIndex ? labels.freeLabel : label,
+                    free: i === freeIndex,
+                    checked: i === freeIndex,
+                })),
+                size,
+            });
+        }
+    };
+
+    /**
+     * @license
+     * Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
+     * This code may only be used under the BSD style license found at
+     * http://polymer.github.io/LICENSE.txt
+     * The complete set of authors may be found at
+     * http://polymer.github.io/AUTHORS.txt
+     * The complete set of contributors may be found at
+     * http://polymer.github.io/CONTRIBUTORS.txt
+     * Code distributed by Google as part of the polymer project is also
+     * subject to an additional IP rights grant found at
+     * http://polymer.github.io/PATENTS.txt
+     */
+    // IE11 doesn't support classList on SVG elements, so we emulate it with a Set
+    class ClassList {
+        constructor(element) {
+            this.classes = new Set();
+            this.changed = false;
+            this.element = element;
+            const classList = (element.getAttribute('class') || '').split(/\s+/);
+            for (const cls of classList) {
+                this.classes.add(cls);
+            }
+        }
+        add(cls) {
+            this.classes.add(cls);
+            this.changed = true;
+        }
+        remove(cls) {
+            this.classes.delete(cls);
+            this.changed = true;
+        }
+        commit() {
+            if (this.changed) {
+                let classString = '';
+                this.classes.forEach((cls) => classString += cls + ' ');
+                this.element.setAttribute('class', classString);
+            }
+        }
+    }
+    /**
+     * Stores the ClassInfo object applied to a given AttributePart.
+     * Used to unset existing values when a new ClassInfo object is applied.
+     */
+    const previousClassesCache = new WeakMap();
+    /**
+     * A directive that applies CSS classes. This must be used in the `class`
+     * attribute and must be the only part used in the attribute. It takes each
+     * property in the `classInfo` argument and adds the property name to the
+     * element's `class` if the property value is truthy; if the property value is
+     * falsey, the property name is removed from the element's `class`. For example
+     * `{foo: bar}` applies the class `foo` if the value of `bar` is truthy.
+     * @param classInfo {ClassInfo}
+     */
+    const classMap = directive((classInfo) => (part) => {
+        if (!(part instanceof AttributePart) || (part instanceof PropertyPart) ||
+            part.committer.name !== 'class' || part.committer.parts.length > 1) {
+            throw new Error('The `classMap` directive must be used in the `class` attribute ' +
+                'and must be the only part in the attribute.');
+        }
+        const { committer } = part;
+        const { element } = committer;
+        let previousClasses = previousClassesCache.get(part);
+        if (previousClasses === undefined) {
+            // Write static classes once
+            // Use setAttribute() because className isn't a string on SVG elements
+            element.setAttribute('class', committer.strings.join(' '));
+            previousClassesCache.set(part, previousClasses = new Set());
+        }
+        const classList = (element.classList || new ClassList(element));
+        // Remove old classes that no longer apply
+        // We use forEach() instead of for-of so that re don't require down-level
+        // iteration.
+        previousClasses.forEach((name) => {
+            if (!(name in classInfo)) {
+                classList.remove(name);
+                previousClasses.delete(name);
+            }
+        });
+        // Add or remove classes based on their classMap value
+        for (const name in classInfo) {
+            const value = classInfo[name];
+            if (value != previousClasses.has(name)) {
+                // We explicitly want a loose truthy check of `value` because it seems
+                // more convenient that '' and 0 are skipped.
+                if (value) {
+                    classList.add(name);
+                    previousClasses.add(name);
+                }
+                else {
+                    classList.remove(name);
+                    previousClasses.delete(name);
+                }
+            }
+        }
+        if (typeof classList.commit === 'function') {
+            classList.commit();
+        }
+    });
+
     const t_square = ({ check, checked, label, free }) => html `<style>
         button {
             display: inline-flex;
@@ -10373,19 +10403,30 @@
         ${squares.map(t_square)}
     </div>
 `;
-    const t_msg = completed => html `${completed ? 'Win!' : ''}`;
-    const t_labels = labels => html `
+    const t_labellist = (labels) => html `
     <style>
         #container {
             display: grid;
             grid-template-columns: 16em 3em;
         }
+
+        .free {
+            color: red;
+            background-color: pink;
+        }
     </style>
     <div id="container">
-        ${labels.list.map(item => html `<div>${item}</div>
+        ${labels.list.map((item, i) => html `<div
+                        class="${classMap({ free: i === labels.freeIndex })}"
+                        @click=${() => {
+    labels.setFreeIndex(i);
+}}
+                    >
+                        ${item}
+                    </div>
                     <button
                         @click=${() => {
-    labels.delete(item);
+    labels.delete(i);
 }}
                     >
                         X
@@ -10395,18 +10436,31 @@
     <input
         type="text"
         name="item-add"
-        @change=${({ target: { value } }) => {
-    labels.add(value);
+        @change=${({ target }) => {
+    labels.add(target.value);
+    target.value = '';
 }}
     />
 `;
+    const t_completed = (completed) => html `${completed ? 'Win!' : ''}`;
+
+    let game = observable({ board: Board.create({}) });
+    const labels = LabelList.create({ list: [] });
     const genbtn = document.querySelector('#generate');
-    genbtn.addEventListener('click', () => b.generate());
-    autorun(() => {
-        if (b.active)
-            render(t_board(b), document.querySelector('#app'));
-        render(t_msg(b.completed), document.querySelector('#winmsg'));
-        render(t_labels(labels), document.querySelector('#newlabel'));
+    genbtn.addEventListener('click', () => {
+        game.board = buildBoard(labels, 5);
     });
+    autorun(() => {
+        if (game.board)
+            render(t_board(game.board), document.querySelector('#app'));
+        render(t_completed(game.board && game.board.completed), document.querySelector('#winmsg'));
+        render(t_labellist(labels), document.querySelector('#newlabel'));
+    });
+    /*
+    Purple: 97 39 81
+    Green: 121 154 5
+    Red: 186 36 84
+    Yellow: 243 206 0
+    */
 
 }());
