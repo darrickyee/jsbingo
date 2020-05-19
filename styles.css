@@ -1,9 +1,117 @@
 :root {
     --jsb-primary-color: rgb(97, 39, 81);
     --jsb-secondary-color: rgb(243, 206, 0);
-    --jsb-primary-text-color: black;
+    --jsb-primary-bg-color: #ac739c;
+    --jsb-square-size: 5em;
 }
 
-.host {
-    position: absolute;
+body,
+button,
+input[type='text'] {
+    font-family: Jost, sans-serif;
+    font-size: 24px;
+    color: var(--jsb-primary-color);
+}
+
+input[type='text'] {
+    margin-bottom: 0.25em;
+    outline: none;
+    border: none;
+    border-bottom: 2px solid var(--jsb-primary-color);
+    background-color: transparent;
+}
+
+#header {
+    display: flex;
+    font-size: 3em;
+    justify-content: center;
+    background-color: var(--jsb-primary-bg-color);
+}
+
+.outline-text {
+    text-shadow: -1px -1px 1px var(--jsb-secondary-color), 0 -1px 1px var(--jsb-secondary-color),
+        1px -1px 1px var(--jsb-secondary-color), 1px 0 1px var(--jsb-secondary-color),
+        1px 1px 1px var(--jsb-secondary-color), 0 1px 1px var(--jsb-secondary-color),
+        -1px 1px 1px var(--jsb-secondary-color), -1px 0 1px var(--jsb-secondary-color);
+    color: var(--jsb-primary-color);
+}
+
+#app {
+    display: inline-flex;
+}
+
+.game-host {
+    margin: 0.25em;
+}
+
+button {
+    border: 2px solid var(--jsb-primary-color);
+    border-radius: 0.25em;
+    background-color: white;
+    font-size: 1em;
+    color: var(--jsb-primary-color);
+    outline: none;
+    transition: background-color 0.25s, color 0.25s;
+}
+
+button:hover,
+.game-host > button.activated,
+.label-item.free {
+    background-color: var(--jsb-primary-bg-color);
+    color: white;
+}
+
+.square {
+    display: inline-flex;
+    font-size: 0.75em;
+    margin: 2px;
+    outline: none;
+    border: none;
+    justify-content: center;
+    transition: background-color 0.25s;
+    border-radius: 0;
+}
+
+button:hover.square {
+    outline: 4px solid var(--jsb-secondary-color);
+}
+
+.checked,
+button:active.square,
+button:hover.checked.square {
+    background-color: var(--jsb-primary-bg-color);
+    color: var(--jsb-secondary-color);
+}
+
+button.square.free-square {
+    pointer-events: none;
+}
+
+.label-item.free {
+    font-weight: bold;
+}
+
+.game-host {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.game-host > button {
+    border-radius: 0;
+    border: none;
+    height: 2em;
+    width: 8em;
+}
+
+.game-stage {
+    position: fixed;
+    transition: transform 0.5s;
+}
+
+#label-list-container {
+    display: grid;
+    grid-template-columns: 20em 1.5em;
+    grid-auto-rows: 1.5em;
 }

@@ -5,6 +5,6 @@ export default [
     {
         input: './src/index.js',
         output: { file: 'index.js', format: 'iife', name: 'jsbingo' },
-        plugins: [resolve()],
+        plugins: [resolve(), terser()],
     },
 ];

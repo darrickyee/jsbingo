@@ -2,34 +2,11 @@ import { html } from 'lit-html';
 import { classMap } from 'lit-html/directives/class-map';
 import { BoardType, LabelListType, SquareType } from './models';
 
-const t_square = ({ check, checked, label, free }: SquareType) => html`<style>
-        .square {
-            display: inline-flex;
-            margin: 2px;
-            outline: none;
-            border: none;
-            justify-content: center;
-            transition: background-color 0.25s;
-        }
-
-        button:hover.square {
-            outline: 4px solid var(--jsb-secondary-color);
-        }
-
-        .checked,
-        button:active.square,
-        button:hover.checked.square {
-            background-color: var(--jsb-primary-color);
-            color: var(--jsb-secondary-color);
-        }
-
-        button.square.free-square {
-            pointer-events: none;
-        }
-    </style>
+const t_square = ({ check, checked, label, free }: SquareType) => html`
     <button class="square ${classMap({ checked, 'free-square': free })}" @click=${check}>
         ${label}
-    </button> `;
+    </button>
+`;
 
 export const t_board = ({ squares, size }: BoardType) => html`
     <style>
@@ -38,8 +15,8 @@ export const t_board = ({ squares, size }: BoardType) => html`
             width: fit-content;
             background-color: var(--jsb-primary-color);
             padding: 2px;
-            grid-template-columns: repeat(${size}, 8em);
-            grid-template-rows: repeat(${size}, 8em);
+            grid-template-columns: repeat(${size}, var(--jsb-square-size));
+            grid-template-rows: repeat(${size}, var(--jsb-square-size));
         }
     </style>
     <div id="board">
@@ -48,19 +25,7 @@ export const t_board = ({ squares, size }: BoardType) => html`
 `;
 
 export const t_labellist = (labels: LabelListType) => html`
-    <style>
-        #container {
-            display: grid;
-            grid-template-columns: 20em 1.5em;
-            grid-auto-rows: 1.5em;
-        }
-
-        .free {
-            color: red;
-            background-color: pink;
-        }
-    </style>
-    <label for="item-add">New label:</label>
+    <label for="item-add">Add a label:</label>
     <input
         type="text"
         name="item-add"
@@ -69,11 +34,11 @@ export const t_labellist = (labels: LabelListType) => html`
             target.value = '';
         }}
     />
-    <div id="container">
+    <div id="label-list-container">
         ${labels.list.map(
             (item, i) =>
                 html`<span
-                        class="${classMap({ free: i === labels.freeIndex })}"
+                        class="label-item ${classMap({ free: i === labels.freeIndex })}"
                         @click=${() => {
                             labels.setFreeIndex(i);
                         }}
@@ -91,7 +56,7 @@ export const t_labellist = (labels: LabelListType) => html`
     </div>
 `;
 
-export const t_bingo = html`
+export const t_bingo = restart => html`
     <style>
         #bingo-win-bg {
             position: fixed;
@@ -115,12 +80,6 @@ export const t_bingo = html`
 
         #bingo-win > * {
             padding: 0.5em;
-            text-shadow: -1px -1px 1px var(--jsb-secondary-color),
-                0 -1px 1px var(--jsb-secondary-color), 1px -1px 1px var(--jsb-secondary-color),
-                1px 0 1px var(--jsb-secondary-color), 1px 1px 1px var(--jsb-secondary-color),
-                0 1px 1px var(--jsb-secondary-color), -1px 1px 1px var(--jsb-secondary-color),
-                -1px 0 1px var(--jsb-secondary-color);
-            color: var(--jsb-primary-color);
         }
 
         @keyframes slidein {
@@ -144,11 +103,15 @@ export const t_bingo = html`
         }
     </style>
     <div id="bingo-win-bg">
-        <div id="bingo-win" @click=${() => location.reload()}>
-            <div style="animation-duration: 0.5s; animation-name: slidein; font-size: 4em;">
+        <div id="bingo-win" @click=${restart}>
+            <div
+                class="outline-text"
+                style="animation-duration: 0.5s; animation-name: slidein; font-size: 4em;"
+            >
                 You achieved Bingo.
             </div>
             <button
+                class="outline-text"
                 id="btn-restart"
                 style="opacity: 0; animation-duration: 1s; animation-name: fadein; animation-delay: 0.5s; animation-fill-mode: forwards; font-size: 2em;"
             >
