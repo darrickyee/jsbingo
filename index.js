@@ -10179,7 +10179,7 @@
     const LabelList = types
         .model('Labels', {
         list: types.array(types.string),
-        freeIndex: types.maybeNull(types.number),
+        freeIndex: types.optional(types.number, 0),
     })
         .actions(self => ({
         add(text = '') {
@@ -10192,7 +10192,7 @@
             else
                 self.list.pop();
         },
-        setFreeIndex(idx = null) {
+        setFreeIndex(idx = 0) {
             self.freeIndex = idx;
         },
     }))
@@ -10223,7 +10223,7 @@
     })
         .views(self => {
         function getDim(dim = 'row') {
-            if (['row', 'column'].includes(dim))
+            if (['row', 'col'].includes(dim))
                 return seq(self.size).map(i => self.squares.filter(sq => sq[dim] == i));
             return [];
         }
@@ -10232,7 +10232,7 @@
                 return getDim();
             },
             get columns() {
-                return getDim('column');
+                return getDim('col');
             },
             get diagonals() {
                 return seq(2).map(i => self.squares.filter(s => i ? s.row === self.size - s.col - 1 : s.row === s.col));
@@ -10366,40 +10366,45 @@
     });
 
     const t_square = ({ check, checked, label, free }) => html `<style>
-        button {
+        .square {
             display: inline-flex;
-            border: 1px solid transparent;
+            margin: 2px;
             outline: none;
+            border: none;
             justify-content: center;
+            transition: background-color 0.25s;
         }
 
-        button:hover {
-            border-color: gray;
-            background-color: rgb(200, 200, 255);
+        button:hover.square {
+            outline: 4px solid var(--jsb-secondary-color);
         }
 
         .checked,
-        button:active {
-            background-color: pink;
+        button:active.square,
+        button:hover.checked.square {
+            background-color: var(--jsb-primary-color);
+            color: var(--jsb-secondary-color);
         }
 
-        .free {
+        button.square.free-square {
             pointer-events: none;
         }
     </style>
-    <button class=${classMap({ checked, free })} @click=${check}>
+    <button class="square ${classMap({ checked, 'free-square': free })}" @click=${check}>
         ${label}
     </button> `;
     const t_board = ({ squares, size }) => html `
     <style>
         #board {
             display: grid;
+            width: fit-content;
+            background-color: var(--jsb-primary-color);
+            padding: 2px;
+            grid-template-columns: repeat(${size}, 8em);
+            grid-template-rows: repeat(${size}, 8em);
         }
     </style>
-    <div
-        id="board"
-        style="grid-template-columns: repeat(${size}, 8em); grid-template-rows: repeat(${size}, 8em);"
-    >
+    <div id="board">
         ${squares.map(t_square)}
     </div>
 `;
@@ -10407,7 +10412,8 @@
     <style>
         #container {
             display: grid;
-            grid-template-columns: 16em 3em;
+            grid-template-columns: 20em 1.5em;
+            grid-auto-rows: 1.5em;
         }
 
         .free {
@@ -10415,23 +10421,6 @@
             background-color: pink;
         }
     </style>
-    <div id="container">
-        ${labels.list.map((item, i) => html `<div
-                        class="${classMap({ free: i === labels.freeIndex })}"
-                        @click=${() => {
-    labels.setFreeIndex(i);
-}}
-                    >
-                        ${item}
-                    </div>
-                    <button
-                        @click=${() => {
-    labels.delete(i);
-}}
-                    >
-                        X
-                    </button>`)}
-    </div>
     <label for="item-add">New label:</label>
     <input
         type="text"
@@ -10441,21 +10430,113 @@
     target.value = '';
 }}
     />
+    <div id="container">
+        ${labels.list.map((item, i) => html `<span
+                        class="${classMap({ free: i === labels.freeIndex })}"
+                        @click=${() => {
+    labels.setFreeIndex(i);
+}}
+                    >
+                        ${item}
+                    </span>
+                    <button
+                        @click=${() => {
+    labels.delete(i);
+}}
+                    >
+                        X
+                    </button>`)}
+    </div>
 `;
-    const t_completed = (completed) => html `${completed ? 'Win!' : ''}`;
+    const t_bingo = html `
+    <style>
+        #bingo-win-bg {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            top: 0;
+            left: 0;
+            overflow: hidden;
+        }
 
-    let game = observable({ board: Board.create({}) });
-    const labels = LabelList.create({ list: [] });
+        #bingo-win {
+            top: 45vh;
+            left: 50vw;
+            transform: translate(-50%, -50%);
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        #bingo-win > * {
+            padding: 0.5em;
+            text-shadow: -1px -1px 1px var(--jsb-secondary-color),
+                0 -1px 1px var(--jsb-secondary-color), 1px -1px 1px var(--jsb-secondary-color),
+                1px 0 1px var(--jsb-secondary-color), 1px 1px 1px var(--jsb-secondary-color),
+                0 1px 1px var(--jsb-secondary-color), -1px 1px 1px var(--jsb-secondary-color),
+                -1px 0 1px var(--jsb-secondary-color);
+            color: var(--jsb-primary-color);
+        }
+
+        @keyframes slidein {
+            from {
+                transform: translateY(100vh);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadein {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+    <div id="bingo-win-bg">
+        <div id="bingo-win" @click=${() => location.reload()}>
+            <div style="animation-duration: 0.5s; animation-name: slidein; font-size: 4em;">
+                You achieved Bingo.
+            </div>
+            <button
+                id="btn-restart"
+                style="opacity: 0; animation-duration: 1s; animation-name: fadein; animation-delay: 0.5s; animation-fill-mode: forwards; font-size: 2em;"
+            >
+                True.
+            </button>
+        </div>
+    </div>
+`;
+    const t_completed = (completed) => html `${completed ? t_bingo : html ``}`;
+
+    let game = observable({ board: Board.create({}), mode: 'config' });
+    const labels = LabelList.create({ list: window['MYLABELS'] || [] });
     const genbtn = document.querySelector('#generate');
     genbtn.addEventListener('click', () => {
-        game.board = buildBoard(labels, 5);
+        if (labels.list.length) {
+            game.board = buildBoard(labels, 5);
+            game.mode = 'play';
+        }
     });
     autorun(() => {
-        if (game.board)
-            render(t_board(game.board), document.querySelector('#app'));
-        render(t_completed(game.board && game.board.completed), document.querySelector('#winmsg'));
-        render(t_labellist(labels), document.querySelector('#newlabel'));
+        switch (game.mode) {
+            case 'config':
+                render(t_labellist(labels), document.querySelector('#labels'));
+                break;
+            case 'play':
+                render(t_board(game.board), document.querySelector('#board-host'));
+                render(t_completed(game.board.completed), document.querySelector('#win'));
+                break;
+        }
     });
+    Object.assign(window, { game });
     /*
     Purple: 97 39 81
     Green: 121 154 5

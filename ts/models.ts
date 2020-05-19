@@ -19,7 +19,7 @@ const shuffleArray = arr => {
 const LabelList = types
     .model('Labels', {
         list: types.array(types.string),
-        freeIndex: types.maybeNull(types.number),
+        freeIndex: types.optional(types.number, 0),
     })
     .actions(self => ({
         add(text = '') {
@@ -30,7 +30,7 @@ const LabelList = types
             if (idx) self.list = cast(self.list.filter((_, i) => i !== idx));
             else self.list.pop();
         },
-        setFreeIndex(idx: number = null) {
+        setFreeIndex(idx: number = 0) {
             self.freeIndex = idx;
         },
     }))
@@ -69,7 +69,7 @@ const Board = types
     })
     .views(self => {
         function getDim(dim = 'row'): SquareType[][] {
-            if (['row', 'column'].includes(dim))
+            if (['row', 'col'].includes(dim))
                 return seq(self.size).map(i => self.squares.filter(sq => sq[dim] == i));
 
             return [];
@@ -79,7 +79,7 @@ const Board = types
                 return getDim();
             },
             get columns() {
-                return getDim('column');
+                return getDim('col');
             },
             get diagonals() {
                 return seq(2).map(i =>

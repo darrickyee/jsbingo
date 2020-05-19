@@ -3,7 +3,11 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap" rel="stylesheet">
+        <link
+            href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap"
+            rel="stylesheet"
+        />
+        <link href="styles.css" rel="stylesheet" />
         <title>Document</title>
     </head>
     <body>
@@ -12,10 +16,19 @@
                 font-family: 'Source Sans Pro';
             }
         </style>
-        <div id="app"></div>
-        <div id="winmsg"></div>
-        <div id="newlabel"></div>
-        <button id="generate">Generate</button>
+
+        <button id="generate" style="position: absolute; right: 0vw;">Generate</button>
+        <div id="config-host" class="host">
+            <div id="labels"></div>
+        </div>
+
+        <div id="board-host" class="host"></div>
+        <div id="win" class="host"></div>
+        <script>
+            const MYLABELS = ['FREE', 'bleh', 'Ok'];
+
+            window.MYLABELS = MYLABELS;
+        </script>
         <script src="index.js"></script>
     </body>
 </html>

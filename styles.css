@@ -1,0 +1,9 @@
+:root {
+    --jsb-primary-color: rgb(97, 39, 81);
+    --jsb-secondary-color: rgb(243, 206, 0);
+    --jsb-primary-text-color: black;
+}
+
+.host {
+    position: absolute;
+}
