@@ -26,6 +26,8 @@ input[type='text'] {
     font-size: 3em;
     justify-content: center;
     background-color: var(--jsb-primary-bg-color);
+    height: 15vh;
+    align-items: center;
 }
 
 .outline-text {
@@ -114,4 +116,6 @@ button.square.free-square {
     display: grid;
     grid-template-columns: 20em 1.5em;
     grid-auto-rows: 1.5em;
+    height: calc(80vh - 3em);
+    overflow-x: auto;
 }
