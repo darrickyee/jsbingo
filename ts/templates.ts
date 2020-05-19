@@ -25,15 +25,18 @@ export const t_board = ({ squares, size }: BoardType) => html`
 `;
 
 export const t_labellist = (labels: LabelListType) => html`
-    <label for="item-add">Add a label:</label>
-    <input
-        type="text"
-        name="item-add"
-        @change=${({ target }) => {
-            labels.add(target.value);
-            target.value = '';
-        }}
-    />
+    <div>Current label count: ${labels.numLabels}</div>
+    <div>
+        <label for="item-add">Add a label:</label>
+        <input
+            type="text"
+            name="item-add"
+            @change=${({ target }) => {
+                labels.add(target.value);
+                target.value = '';
+            }}
+        />
+    </div>
     <div id="label-list-container">
         ${labels.list.map(
             (item, i) =>
@@ -106,7 +109,7 @@ export const t_bingo = restart => html`
         <div id="bingo-win" @click=${restart}>
             <div
                 class="outline-text"
-                style="animation-duration: 0.5s; animation-name: slidein; font-size: 4em;"
+                style="animation-duration: 0.5s; animation-name: slidein; font-size: 4em; text-align: center;"
             >
                 You achieved Bingo.
             </div>

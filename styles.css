@@ -1,16 +1,28 @@
 :root {
+    --jsb-font-size: 24px;
+    --jsb-font-family: Jost, sans-serif;
     --jsb-primary-color: rgb(97, 39, 81);
     --jsb-secondary-color: rgb(243, 206, 0);
     --jsb-primary-bg-color: #ac739c;
     --jsb-square-size: 5em;
+    --jsb-square-font-size: 0.6em;
+}
+
+*::-webkit-scrollbar {
+    width: 0.5em;
+    background-color: var(--jsb-primary-bg-color);
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: var(--jsb-primary-color);
 }
 
 body,
 button,
 input[type='text'] {
-    font-family: Jost, sans-serif;
-    font-size: 24px;
     color: var(--jsb-primary-color);
+    font-family: var(--jsb-font-family);
+    font-size: var(--jsb-font-size);
 }
 
 input[type='text'] {
@@ -28,6 +40,7 @@ input[type='text'] {
     background-color: var(--jsb-primary-bg-color);
     height: 15vh;
     align-items: center;
+    text-align: center;
 }
 
 .outline-text {
@@ -42,8 +55,24 @@ input[type='text'] {
     display: inline-flex;
 }
 
-.game-host {
+#board {
+    margin: 0.5em;
+    overflow: auto;
+}
+
+.game-nav {
     margin: 0.25em;
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.game-nav > button {
+    border-radius: 0;
+    border: none;
+    height: 2em;
+    width: 8em;
 }
 
 button {
@@ -57,15 +86,27 @@ button {
 }
 
 button:hover,
-.game-host > button.activated,
+.game-nav > button.activated,
 .label-item.free {
     background-color: var(--jsb-primary-bg-color);
     color: white;
 }
 
+.label-item {
+    border: 2px solid transparent;
+}
+
+.label-item.free {
+    color: white;
+}
+
+.label-item:hover {
+    border-color: var(--jsb-primary-bg-color);
+}
+
 .square {
     display: inline-flex;
-    font-size: 0.75em;
+    font-size: var(--jsb-square-font-size);
     margin: 2px;
     outline: none;
     border: none;
@@ -89,33 +130,45 @@ button.square.free-square {
     pointer-events: none;
 }
 
-.label-item.free {
-    font-weight: bold;
-}
-
-.game-host {
-    position: relative;
-    display: inline-flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.game-host > button {
-    border-radius: 0;
-    border: none;
-    height: 2em;
-    width: 8em;
-}
-
 .game-stage {
-    position: fixed;
+    height: 80vh;
+    overflow: hidden;
+    margin: 0.25em;
+}
+
+.game-stage > .game-stage-grid {
+    display: grid;
     transition: transform 0.5s;
+}
+
+.game-stage-item {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0.25em;
 }
 
 #label-list-container {
     display: grid;
-    grid-template-columns: 20em 1.5em;
-    grid-auto-rows: 1.5em;
+    grid-template-columns: 24em 1.5em;
     height: calc(80vh - 3em);
     overflow-x: auto;
+}
+
+#label-list-container > * {
+    margin: 0.125em;
+    font-size: 0.75em;
+    transition: color 0.25s, background-color 0.25s;
+}
+
+#label-list-container > button {
+    border-radius: 0;
+    border: none;
+    background-color: transparent;
+    color: var(--jsb-primary-bg-color);
+    font-weight: bold;
+}
+
+#label-list-container > button:hover {
+    color: var(--jsb-primary-color);
 }

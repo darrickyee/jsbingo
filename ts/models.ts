@@ -27,7 +27,7 @@ const LabelList = types
         },
         delete(idx: number = null) {
             // Use 'cast' to avoid TypeScript errors
-            if (idx) self.list = cast(self.list.filter((_, i) => i !== idx));
+            if (idx !== null) self.list = cast(self.list.filter((_, i) => i !== idx));
             else self.list.pop();
         },
         setFreeIndex(idx: number = 0) {
@@ -37,6 +37,12 @@ const LabelList = types
     .views(self => ({
         get freeLabel() {
             return self.list[self.freeIndex];
+        },
+        get numLabels() {
+            return self.list.length;
+        },
+        get nonFreeLabels() {
+            return self.list.filter((_, i) => i !== self.freeIndex);
         },
     }));
 
@@ -112,9 +118,9 @@ type BoardType = Instance<typeof Board>;
 
 const buildBoard = (labels: LabelListType, size = 5, randomFree = false) => {
     if (size && labels.list.length) {
-        const numdecks = Math.ceil(size ** 2 / labels.list.length);
+        const numdecks = Math.ceil(size ** 2 / labels.nonFreeLabels.length);
         const boardlabels = seq(numdecks)
-            .flatMap(() => shuffleArray(labels.list))
+            .flatMap(() => shuffleArray(labels.nonFreeLabels))
             .slice(0, size ** 2);
         const freeIndex = randomFree ? randInt(size ** 2) : Math.floor(size ** 2 / 2);
 
