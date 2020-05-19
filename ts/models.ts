@@ -31,7 +31,7 @@ const LabelList = types
             else self.list.pop();
         },
         setFreeIndex(idx: number = 0) {
-            self.freeIndex = idx;
+            self.freeIndex = idx < self.list.length ? idx : 0;
         },
     }))
     .views(self => ({
@@ -40,9 +40,6 @@ const LabelList = types
         },
         get numLabels() {
             return self.list.length;
-        },
-        get nonFreeLabels() {
-            return self.list.filter((_, i) => i !== self.freeIndex);
         },
     }));
 
@@ -118,18 +115,21 @@ type BoardType = Instance<typeof Board>;
 
 const buildBoard = (labels: LabelListType, size = 5, randomFree = false) => {
     if (size && labels.list.length) {
-        const numdecks = Math.ceil(size ** 2 / labels.nonFreeLabels.length);
+        const numdecks =
+            1 + Math.max(0, Math.floor((size ** 2 - labels.numLabels) / (labels.numLabels - 1)));
+
         const boardlabels = seq(numdecks)
-            .flatMap(() => shuffleArray(labels.nonFreeLabels))
+            .flatMap(() => shuffleArray(labels.list.filter((_, i) => i !== labels.freeIndex)))
             .slice(0, size ** 2);
         const freeIndex = randomFree ? randInt(size ** 2) : Math.floor(size ** 2 / 2);
+        boardlabels.splice(freeIndex, 0, labels.freeLabel);
 
         return Board.create({
             squares: boardlabels.map((label, i) =>
                 Square.create({
                     row: Math.floor(i / size),
                     col: i % size,
-                    label: i === freeIndex ? labels.freeLabel : label,
+                    label: label,
                     free: i === freeIndex,
                     checked: i === freeIndex,
                 })

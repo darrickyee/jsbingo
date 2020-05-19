@@ -5,11 +5,12 @@
     --jsb-secondary-color: rgb(243, 206, 0);
     --jsb-primary-bg-color: #ac739c;
     --jsb-square-size: 5em;
-    --jsb-square-font-size: 0.6em;
+    --jsb-square-font-size: 0.65em;
 }
 
 *::-webkit-scrollbar {
     width: 0.5em;
+    height: 0.5em;
     background-color: var(--jsb-primary-bg-color);
 }
 
