@@ -116,11 +116,12 @@ type BoardType = Instance<typeof Board>;
 const buildBoard = (labels: LabelListType, size = 5, randomFree = false) => {
     if (size && labels.list.length) {
         const numdecks =
-            1 + Math.max(0, Math.floor((size ** 2 - labels.numLabels) / (labels.numLabels - 1)));
+            // 1 + Math.max(0, Math.floor((size ** 2 - labels.numLabels) / (labels.numLabels - 1)));
+            Math.ceil((size ** 2 - 1) / (labels.numLabels - 1));
 
         const boardlabels = seq(numdecks)
             .flatMap(() => shuffleArray(labels.list.filter((_, i) => i !== labels.freeIndex)))
-            .slice(0, size ** 2);
+            .slice(0, size ** 2 - 1);
         const freeIndex = randomFree ? randInt(size ** 2) : Math.floor(size ** 2 / 2);
         boardlabels.splice(freeIndex, 0, labels.freeLabel);
 
