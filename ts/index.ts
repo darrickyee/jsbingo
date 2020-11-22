@@ -25,7 +25,9 @@ const win = () => {
 const getStagePosition = (mode: 'setup' | 'play' | 'last') =>
     `translateY(${-100 * (['setup', 'play', 'last'].indexOf(mode) / 3)}%)`;
 
-const labels = LabelList.create({ list: window['_LABELS_'] || [] });
+const labels = LabelList.create({
+    list: JSON.parse(localStorage.getItem('jsb-labels')) || window['_LABELS_'] || [],
+});
 
 const t_game = game => html`
     <div class="game-nav">
@@ -46,12 +48,8 @@ const t_game = game => html`
     </div>
     <div class="game-stage">
         <div class="game-stage-grid" style="transform: ${getStagePosition(game.mode)};">
-            <div class="game-stage-item">
-                ${t_labellist(labels)}
-            </div>
-            <div class="game-stage-item">
-                ${t_board(game.board)}
-            </div>
+            <div class="game-stage-item">${t_labellist(labels)}</div>
+            <div class="game-stage-item">${t_board(game.board)}</div>
             <div class="game-stage-item" style="pointer-events: none;">
                 ${lastGame.squares.length ? t_board(lastGame) : 'No past games to display!'}
             </div>
@@ -62,6 +60,10 @@ const t_game = game => html`
 
 autorun(() => {
     render(t_game(game), document.querySelector('#app'));
+});
+
+autorun(() => {
+    localStorage.setItem('jsb-labels', JSON.stringify(labels.list));
 });
 
 Object.assign(window, { game });
